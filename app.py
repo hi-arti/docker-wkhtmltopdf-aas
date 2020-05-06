@@ -7,11 +7,13 @@
 """
 import json
 import tempfile
+import logging
 
 from werkzeug.wsgi import wrap_file
 from werkzeug.wrappers import Request, Response
 from executor import execute
 
+gunicorn_logger = logging.getLogger('gunicorn.error')
 
 @Request.application
 def application(request):
@@ -41,22 +43,24 @@ def application(request):
 
         source_file.flush()
 
-        # Evaluate argument to run with subprocess
-        args = ['wkhtmltopdf']
-
         # Add Global Options
+        optionsArgs = []
         if options:
             for option, value in options.items():
-                args.append('--%s' % option)
+                optionsArgs.append('--%s' % option)
                 if value:
-                    args.append('"%s"' % value)
+                    optionsArgs.append('"%s"' % value)
 
         # Add source file name and output file name
         file_name = source_file.name
-        args += [file_name, file_name + ".pdf"]
 
+        args = ['wkhtmltopdf'] + optionsArgs + [file_name, file_name + ".pdf"]
+
+        gunicorn_logger.info('START wkhtmltopdf')
+        gunicorn_logger.debug('with args '.format(' '.join(optionsArgs)))
         # Execute the command using executor
         execute(' '.join(args))
+        gunicorn_logger.info('END wkhtmltopdf')
 
         return Response(
             wrap_file(request.environ, open(file_name + '.pdf')),
