@@ -6,6 +6,7 @@ ENV WORKER_THREADS 1
 ENV WORKERS_COUNT 1
 ENV WORKER_CONNECTIONS 100
 ENV WORKER_TIMEOUT 300
+ENV LOG_LEVEL info
 
 # Install dependencies for running web service
 RUN apk add --update py-pip
